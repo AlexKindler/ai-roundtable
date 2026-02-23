@@ -25,7 +25,7 @@ export const anthropicProvider: ProviderConfig = {
           provider: "anthropic",
           apiKey,
           body: {
-            model: "claude-3-5-haiku-20241022",
+            model: "claude-sonnet-4-20250514",
             messages: [{ role: "user", content: "Hi" }],
             max_tokens: 5,
           },
