@@ -49,15 +49,15 @@ export function ApiKeyDialog({ providerId, open, onOpenChange, onDone }: ApiKeyD
     setApiKey(providerId, localKey);
     setKeyStatus(providerId, "validating");
 
-    const isValid = await provider.validateKey(localKey);
+    const result = await provider.validateKey(localKey);
 
-    if (isValid) {
+    if (result.valid) {
       setKeyStatus(providerId, "valid");
       setStep("choose-models");
       setLocalKey("");
     } else {
       setKeyStatus(providerId, "invalid");
-      setError("Invalid API key. Please check and try again.");
+      setError(result.error || "Invalid API key. Please check and try again.");
     }
     setValidating(false);
   };

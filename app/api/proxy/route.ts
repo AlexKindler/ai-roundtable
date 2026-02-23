@@ -54,8 +54,20 @@ export async function POST(req: Request) {
     });
 
     return new Response("OK", { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(message, { status: 401 });
+
+    // Extract upstream status code from AI SDK errors
+    const statusCode =
+      (error as { status?: number })?.status ??
+      (error as { statusCode?: number })?.statusCode;
+
+    // Auth failures from upstream providers
+    if (statusCode === 401 || statusCode === 403) {
+      return Response.json({ error: message, code: "invalid_key" }, { status: 401 });
+    }
+
+    // Everything else is an upstream/transient error, not an invalid key
+    return Response.json({ error: message, code: "upstream_error" }, { status: 502 });
   }
 }

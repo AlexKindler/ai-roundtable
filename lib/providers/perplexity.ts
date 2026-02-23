@@ -30,9 +30,12 @@ export const perplexityProvider: ProviderConfig = {
           },
         }),
       });
-      return res.ok;
+      if (res.ok) return { valid: true };
+      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
+      const data = await res.json().catch(() => null);
+      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
     } catch {
-      return false;
+      return { valid: false, error: "Network error. Please check your connection." };
     }
   },
 };

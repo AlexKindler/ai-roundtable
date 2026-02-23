@@ -20,7 +20,7 @@ export interface ProviderConfig {
   apiKeyPrefix?: string;
   setupUrl: string;
   setupInstructions: string;
-  validateKey: (apiKey: string) => Promise<boolean>;
+  validateKey: (apiKey: string) => Promise<{ valid: boolean; error?: string }>;
   getBaseURL?: () => string;
 }
 
