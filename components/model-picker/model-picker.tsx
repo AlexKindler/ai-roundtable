@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { SelectedModelChip } from "./selected-model-chip";
 import { ApiKeyDialog } from "./api-key-dialog";
 import { useApiKeysStore } from "@/lib/stores/api-keys-store";
@@ -9,6 +11,7 @@ import { modelRegistry, type RegisteredModel } from "@/lib/providers/model-regis
 import { cn } from "@/lib/utils";
 
 export function ModelPicker() {
+  const [query, setQuery] = useState("");
   const [activeProvider, setActiveProvider] = useState<string | null>(null);
 
   const {
@@ -36,6 +39,13 @@ export function ModelPicker() {
     return counts;
   }, [selectedModels]);
 
+  // Filter providers by search query
+  const filteredProviders = useMemo(() => {
+    if (!query.trim()) return providers;
+    const q = query.toLowerCase();
+    return providers.filter((p) => p.name.toLowerCase().includes(q));
+  }, [query]);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Selected models bar */}
@@ -60,9 +70,20 @@ export function ModelPicker() {
         </p>
       )}
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search providers..."
+          className="pl-9"
+        />
+      </div>
+
       {/* Provider grid */}
       <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
-        {providers.map((provider) => {
+        {filteredProviders.map((provider) => {
           const isConnected = isProviderAuthenticated(provider.id);
           const selectedCount = modelCountByProvider[provider.id] || 0;
 
@@ -114,6 +135,12 @@ export function ModelPicker() {
             </button>
           );
         })}
+
+        {filteredProviders.length === 0 && (
+          <div className="col-span-2 py-8 text-center text-sm text-muted-foreground">
+            No providers found for &ldquo;{query}&rdquo;
+          </div>
+        )}
       </div>
 
       {/* Provider Setup / Model Selection Dialog */}
