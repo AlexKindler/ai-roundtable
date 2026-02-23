@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     await generateText({
       model: languageModel,
       messages: body.messages,
-      maxOutputTokens: body.max_tokens || 5,
+      maxOutputTokens: body.max_tokens || 16,
     });
 
     return new Response("OK", { status: 200 });
