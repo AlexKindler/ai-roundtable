@@ -7,8 +7,10 @@ export const perplexityProvider: ProviderConfig = {
   apiKeyPlaceholder: "pplx-...",
   apiKeyPrefix: "pplx-",
   models: [
-    { id: "sonar-pro", name: "Sonar Pro", capability: 8, inputCostPer1M: 3, outputCostPer1M: 15 },
-    { id: "sonar", name: "Sonar", capability: 7, inputCostPer1M: 1, outputCostPer1M: 1 },
+    { id: "sonar-pro", name: "Sonar Pro", capability: 8, inputCostPer1M: 3, outputCostPer1M: 15, category: "flagship", contextWindow: 200000, tags: ["search", "reasoning"] },
+    { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", capability: 9, inputCostPer1M: 2, outputCostPer1M: 8, category: "reasoning", contextWindow: 128000, tags: ["search", "reasoning"] },
+    { id: "sonar-reasoning", name: "Sonar Reasoning", capability: 7, inputCostPer1M: 1, outputCostPer1M: 5, category: "reasoning", contextWindow: 128000, tags: ["search", "reasoning"] },
+    { id: "sonar", name: "Sonar", capability: 7, inputCostPer1M: 1, outputCostPer1M: 1, category: "mid", contextWindow: 128000, tags: ["search"] },
   ],
   getBaseURL: () => "https://api.perplexity.ai",
   validateKey: async (apiKey: string) => {

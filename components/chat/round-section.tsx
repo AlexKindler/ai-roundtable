@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ModelResponseCard } from "./model-response";
-import type { ModelResponse } from "@/lib/stores/roundtable-store";
+import { responseKey, type ModelResponse } from "@/lib/stores/roundtable-store";
 
 interface RoundSectionProps {
   title: string;
@@ -48,7 +48,7 @@ export function RoundSection({
       <CollapsibleContent>
         <div className="space-y-2 pl-6 pt-2 pb-1">
           {responses.map((response) => (
-            <ModelResponseCard key={response.providerId} response={response} />
+            <ModelResponseCard key={responseKey(response.providerId, response.modelId)} response={response} />
           ))}
         </div>
       </CollapsibleContent>

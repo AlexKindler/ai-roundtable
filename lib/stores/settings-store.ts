@@ -16,14 +16,14 @@ interface SettingsState {
   // Deliberation settings
   deliberationRounds: 2 | 3;
   deliberationMode: DeliberationMode;
-  synthesizerModel: string; // "auto" or specific providerId:modelId
+  synthesizerModel: string; // "auto" or "providerId:modelId"
 
   // Display settings
   defaultView: DefaultView;
   showTokenCounts: boolean;
   showCostEstimates: boolean;
 
-  // Per-model settings
+  // Per-model settings (keyed by "providerId:modelId")
   modelSettings: Record<string, ModelSettings>;
 
   // Actions
@@ -33,8 +33,8 @@ interface SettingsState {
   setDefaultView: (view: DefaultView) => void;
   setShowTokenCounts: (show: boolean) => void;
   setShowCostEstimates: (show: boolean) => void;
-  getModelSettings: (providerId: string) => ModelSettings;
-  setModelSettings: (providerId: string, settings: Partial<ModelSettings>) => void;
+  getModelSettings: (key: string) => ModelSettings;
+  setModelSettings: (key: string, settings: Partial<ModelSettings>) => void;
 }
 
 const defaultModelSettings: ModelSettings = {
@@ -42,6 +42,8 @@ const defaultModelSettings: ModelSettings = {
   maxTokens: 2048,
   systemPrompt: "",
 };
+
+export const defaultModelSettingsValue = defaultModelSettings;
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -61,17 +63,17 @@ export const useSettingsStore = create<SettingsState>()(
       setShowTokenCounts: (show) => set({ showTokenCounts: show }),
       setShowCostEstimates: (show) => set({ showCostEstimates: show }),
 
-      getModelSettings: (providerId) => {
-        return get().modelSettings[providerId] || defaultModelSettings;
+      getModelSettings: (key) => {
+        return get().modelSettings[key] || defaultModelSettings;
       },
 
-      setModelSettings: (providerId, settings) =>
+      setModelSettings: (key, settings) =>
         set((state) => ({
           modelSettings: {
             ...state.modelSettings,
-            [providerId]: {
+            [key]: {
               ...defaultModelSettings,
-              ...state.modelSettings[providerId],
+              ...state.modelSettings[key],
               ...settings,
             },
           },

@@ -2,7 +2,7 @@
 
 import { useSettingsStore } from "@/lib/stores/settings-store";
 import { useApiKeysStore } from "@/lib/stores/api-keys-store";
-import { providers } from "@/lib/providers";
+import { getModelByKey } from "@/lib/providers/model-registry";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,13 +17,11 @@ export function DeliberationSettings() {
     setDeliberationMode,
     setSynthesizerModel,
   } = useSettingsStore();
-  const { keys } = useApiKeysStore();
+  const { selectedModels } = useApiKeysStore();
 
-  // Get active providers for synthesizer selection
-  const activeProviders = Object.entries(keys)
-    .filter(([, v]) => v.status === "valid")
-    .map(([id]) => providers.find((p) => p.id === id))
-    .filter(Boolean);
+  const selectedModelInfo = selectedModels
+    .map((sm) => ({ ...sm, model: getModelByKey(sm.providerId, sm.modelId) }))
+    .filter((sm) => sm.model);
 
   return (
     <Card>
@@ -56,7 +54,7 @@ export function DeliberationSettings() {
               onClick={() => setDeliberationMode("standard")}
               className={`flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors cursor-pointer ${
                 deliberationMode === "standard"
-                  ? "border-primary bg-primary/10"
+                  ? "border-indigo-500/40 bg-indigo-500/10"
                   : "border-border hover:border-border/80"
               }`}
             >
@@ -68,7 +66,7 @@ export function DeliberationSettings() {
               onClick={() => setDeliberationMode("quick")}
               className={`flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors cursor-pointer ${
                 deliberationMode === "quick"
-                  ? "border-primary bg-primary/10"
+                  ? "border-indigo-500/40 bg-indigo-500/10"
                   : "border-border hover:border-border/80"
               }`}
             >
@@ -80,7 +78,7 @@ export function DeliberationSettings() {
               onClick={() => setDeliberationMode("debate")}
               className={`flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors cursor-pointer ${
                 deliberationMode === "debate"
-                  ? "border-primary bg-primary/10"
+                  ? "border-indigo-500/40 bg-indigo-500/10"
                   : "border-border hover:border-border/80"
               }`}
             >
@@ -100,10 +98,10 @@ export function DeliberationSettings() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="auto">Auto (highest capability)</SelectItem>
-              {activeProviders.map((provider) =>
-                provider ? (
-                  <SelectItem key={provider.id} value={provider.id}>
-                    {provider.name}
+              {selectedModelInfo.map(({ providerId, modelId, model }) =>
+                model ? (
+                  <SelectItem key={`${providerId}:${modelId}`} value={`${providerId}:${modelId}`}>
+                    {model.modelName} ({model.providerName})
                   </SelectItem>
                 ) : null
               )}

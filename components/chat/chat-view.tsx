@@ -6,11 +6,12 @@ import { RoundtableResult } from "./roundtable-result";
 import { RoundSection } from "./round-section";
 import { FinalAnswer } from "./final-answer";
 import { ProgressIndicator } from "@/components/progress-indicator";
-import { useRoundtableStore } from "@/lib/stores/roundtable-store";
+import { useRoundtableStore, responseKey } from "@/lib/stores/roundtable-store";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { useApiKeysStore } from "@/lib/stores/api-keys-store";
 import { useSettingsStore } from "@/lib/stores/settings-store";
 import { providers, type ActiveModel } from "@/lib/providers";
+import { getModelByKey } from "@/lib/providers/model-registry";
 import { runRoundtable } from "@/lib/engine/deliberation";
 import type { StreamCallbacks } from "@/lib/engine/types";
 import { MessageSquare } from "lucide-react";
@@ -19,7 +20,7 @@ export function ChatView() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { messages, addUserMessage, addRoundtableResult } = useChatStore();
   const roundtable = useRoundtableStore();
-  const { keys } = useApiKeysStore();
+  const { selectedModels, providerAuth } = useApiKeysStore();
   const settings = useSettingsStore();
 
   const isRunning = roundtable.status !== "idle" && roundtable.status !== "complete" && roundtable.status !== "error";
@@ -33,28 +34,28 @@ export function ChatView() {
 
   const getActiveModels = useCallback((): ActiveModel[] => {
     const activeModels: ActiveModel[] = [];
-    for (const [providerId, keyState] of Object.entries(keys)) {
-      if (keyState.status === "valid" && keyState.apiKey) {
-        const provider = providers.find((p) => p.id === providerId);
-        if (!provider) continue;
+    for (const sm of selectedModels) {
+      const auth = providerAuth[sm.providerId];
+      if (!auth || auth.status !== "valid" || !auth.apiKey) continue;
 
-        const modelId = keyState.selectedModel || provider.models[0]?.id;
-        const model = provider.models.find((m) => m.id === modelId);
-        if (!model) continue;
+      const provider = providers.find((p) => p.id === sm.providerId);
+      if (!provider) continue;
 
-        activeModels.push({
-          providerId,
-          providerName: provider.name,
-          modelId: model.id,
-          modelName: model.name,
-          apiKey: keyState.apiKey,
-          color: provider.color,
-          capability: model.capability,
-        });
-      }
+      const model = provider.models.find((m) => m.id === sm.modelId);
+      if (!model) continue;
+
+      activeModels.push({
+        providerId: sm.providerId,
+        providerName: provider.name,
+        modelId: model.id,
+        modelName: model.name,
+        apiKey: auth.apiKey,
+        color: provider.color,
+        capability: model.capability,
+      });
     }
     return activeModels;
-  }, [keys]);
+  }, [selectedModels, providerAuth]);
 
   const handleSubmit = async (message: string) => {
     addUserMessage(message);
@@ -71,6 +72,7 @@ export function ChatView() {
         providerId: model.providerId,
         providerName: model.providerName,
         modelId: model.modelId,
+        modelName: model.modelName,
         color: model.color,
         text: "",
         isStreaming: true,
@@ -80,13 +82,13 @@ export function ChatView() {
 
     const callbacks: StreamCallbacks = {
       onRound1Start: () => roundtable.setStatus("round1"),
-      onRound1Token: (providerId, token) => {
-        roundtable.updateRound1Response(providerId, {
-          text: (roundtable.currentResult?.round1.find((r) => r.providerId === providerId)?.text || "") + token,
+      onRound1Token: (providerId, modelId, token) => {
+        roundtable.updateRound1Response(providerId, modelId, {
+          text: (roundtable.currentResult?.round1.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
         });
       },
-      onRound1Complete: (providerId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound1Response(providerId, {
+      onRound1Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
+        roundtable.updateRound1Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -94,8 +96,8 @@ export function ChatView() {
           outputTokens,
         });
       },
-      onRound1Error: (providerId, error) => {
-        roundtable.updateRound1Response(providerId, {
+      onRound1Error: (providerId, modelId, error) => {
+        roundtable.updateRound1Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -104,13 +106,13 @@ export function ChatView() {
 
       onRound2Start: () => {
         roundtable.setStatus("round2");
-        // Initialize Round 2 response slots
         const r1Responses = roundtable.currentResult?.round1.filter((r) => r.isComplete && !r.error) || [];
         for (const r of r1Responses) {
           roundtable.addRound2Response({
             providerId: r.providerId,
             providerName: r.providerName,
             modelId: r.modelId,
+            modelName: r.modelName,
             color: r.color,
             text: "",
             isStreaming: true,
@@ -118,13 +120,13 @@ export function ChatView() {
           });
         }
       },
-      onRound2Token: (providerId, token) => {
-        roundtable.updateRound2Response(providerId, {
-          text: (roundtable.currentResult?.round2.find((r) => r.providerId === providerId)?.text || "") + token,
+      onRound2Token: (providerId, modelId, token) => {
+        roundtable.updateRound2Response(providerId, modelId, {
+          text: (roundtable.currentResult?.round2.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
         });
       },
-      onRound2Complete: (providerId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound2Response(providerId, {
+      onRound2Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
+        roundtable.updateRound2Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -132,8 +134,8 @@ export function ChatView() {
           outputTokens,
         });
       },
-      onRound2Error: (providerId, error) => {
-        roundtable.updateRound2Response(providerId, {
+      onRound2Error: (providerId, modelId, error) => {
+        roundtable.updateRound2Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -148,6 +150,7 @@ export function ChatView() {
             providerId: r.providerId,
             providerName: r.providerName,
             modelId: r.modelId,
+            modelName: r.modelName,
             color: r.color,
             text: "",
             isStreaming: true,
@@ -155,13 +158,13 @@ export function ChatView() {
           });
         }
       },
-      onRound2_5Token: (providerId, token) => {
-        roundtable.updateRound2_5Response(providerId, {
-          text: (roundtable.currentResult?.round2_5?.find((r) => r.providerId === providerId)?.text || "") + token,
+      onRound2_5Token: (providerId, modelId, token) => {
+        roundtable.updateRound2_5Response(providerId, modelId, {
+          text: (roundtable.currentResult?.round2_5?.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
         });
       },
-      onRound2_5Complete: (providerId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound2_5Response(providerId, {
+      onRound2_5Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
+        roundtable.updateRound2_5Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -169,8 +172,8 @@ export function ChatView() {
           outputTokens,
         });
       },
-      onRound2_5Error: (providerId, error) => {
-        roundtable.updateRound2_5Response(providerId, {
+      onRound2_5Error: (providerId, modelId, error) => {
+        roundtable.updateRound2_5Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -180,15 +183,15 @@ export function ChatView() {
       onRound3Start: () => {
         roundtable.setStatus("round3");
       },
-      onRound3Token: (providerId, token) => {
+      onRound3Token: (providerId, modelId, token) => {
         const current = roundtable.currentResult?.finalAnswer;
         if (!current) {
-          // Initialize final answer
-          const model = activeModels.find((m) => m.providerId === providerId);
+          const model = activeModels.find((m) => m.providerId === providerId && m.modelId === modelId);
           roundtable.setFinalAnswer({
             providerId,
             providerName: model?.providerName || providerId,
-            modelId: model?.modelId || "",
+            modelId,
+            modelName: model?.modelName || modelId,
             color: model?.color || "#888",
             text: token,
             isStreaming: true,
@@ -198,13 +201,14 @@ export function ChatView() {
           roundtable.updateFinalAnswer({ text: current.text + token });
         }
       },
-      onRound3Complete: (providerId, text, inputTokens, outputTokens) => {
-        const model = activeModels.find((m) => m.providerId === providerId);
+      onRound3Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
+        const model = activeModels.find((m) => m.providerId === providerId && m.modelId === modelId);
         if (!roundtable.currentResult?.finalAnswer) {
           roundtable.setFinalAnswer({
             providerId,
             providerName: model?.providerName || providerId,
-            modelId: model?.modelId || "",
+            modelId,
+            modelName: model?.modelName || modelId,
             color: model?.color || "#888",
             text,
             isStreaming: false,
@@ -222,7 +226,7 @@ export function ChatView() {
           });
         }
       },
-      onRound3Error: (providerId, error) => {
+      onRound3Error: (_providerId, _modelId, error) => {
         roundtable.updateFinalAnswer({
           isStreaming: false,
           isComplete: true,
@@ -243,7 +247,8 @@ export function ChatView() {
 
     const modelSettingsMap: Record<string, { temperature: number; maxTokens: number; systemPrompt: string }> = {};
     for (const model of activeModels) {
-      modelSettingsMap[model.providerId] = settings.getModelSettings(model.providerId);
+      const key = `${model.providerId}:${model.modelId}`;
+      modelSettingsMap[key] = settings.getModelSettings(key);
     }
 
     await runRoundtable(
@@ -273,10 +278,10 @@ export function ChatView() {
           <div className="flex flex-col items-center justify-center h-full text-center gap-4 text-muted-foreground">
             <MessageSquare className="h-12 w-12 opacity-30" />
             <div>
-              <h3 className="text-lg font-medium text-foreground mb-1">AI Roundtable</h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">Ready to Deliberate</h3>
               <p className="text-sm max-w-md">
-                Ask a question and multiple AI models will independently respond, cross-examine each other,
-                and synthesize a superior consensus answer.
+                Ask a question and {getActiveModels().length} AI models will independently respond,
+                cross-examine each other, and synthesize a consensus answer.
               </p>
             </div>
           </div>
@@ -287,7 +292,7 @@ export function ChatView() {
           <div key={msg.id}>
             {msg.role === "user" ? (
               <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5 max-w-2xl text-sm">
+                <div className="bg-indigo-500/20 text-foreground rounded-2xl rounded-br-md px-4 py-2.5 max-w-2xl text-sm border border-indigo-500/10">
                   {msg.content}
                 </div>
               </div>

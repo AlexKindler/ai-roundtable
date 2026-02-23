@@ -14,6 +14,7 @@ export async function GET() {
       encryptedKey: true,
       iv: true,
       selectedModel: true,
+      selectedModels: true,
     },
   });
 
@@ -32,6 +33,7 @@ export async function PUT(req: Request) {
       encryptedKey: string;
       iv: string;
       selectedModel?: string;
+      selectedModels?: string;
     }>;
   };
 
@@ -52,6 +54,7 @@ export async function PUT(req: Request) {
           encryptedKey: key.encryptedKey,
           iv: key.iv,
           selectedModel: key.selectedModel ?? null,
+          selectedModels: key.selectedModels ?? null,
         },
         create: {
           userId: session.user!.id!,
@@ -59,6 +62,7 @@ export async function PUT(req: Request) {
           encryptedKey: key.encryptedKey,
           iv: key.iv,
           selectedModel: key.selectedModel ?? null,
+          selectedModels: key.selectedModels ?? null,
         },
       })
     )

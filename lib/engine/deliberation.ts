@@ -58,13 +58,29 @@ async function callLLM(options: LLMCallOptions): Promise<string> {
   }
 }
 
+// Composite key for settings lookup
+function modelKey(model: ActiveModel): string {
+  return `${model.providerId}:${model.modelId}`;
+}
+
 function selectSynthesizer(models: ActiveModel[], preferredId: string): ActiveModel {
   if (preferredId !== "auto") {
-    const preferred = models.find((m) => m.providerId === preferredId);
+    // Try composite key first (providerId:modelId), then just providerId for backward compat
+    const preferred = models.find((m) => modelKey(m) === preferredId) ||
+                      models.find((m) => m.providerId === preferredId);
     if (preferred) return preferred;
   }
   // Auto: pick highest capability
   return [...models].sort((a, b) => b.capability - a.capability)[0];
+}
+
+function getSettings(
+  model: ActiveModel,
+  modelSettings: Record<string, { temperature: number; maxTokens: number; systemPrompt: string }>
+) {
+  return modelSettings[modelKey(model)] ||
+         modelSettings[model.providerId] ||
+         { temperature: 0.7, maxTokens: 2048, systemPrompt: "" };
 }
 
 export async function runRoundtable(
@@ -84,11 +100,7 @@ export async function runRoundtable(
 
     const round1Results = await Promise.allSettled(
       models.map((model) => {
-        const settings = modelSettings[model.providerId] || {
-          temperature: 0.7,
-          maxTokens: 2048,
-          systemPrompt: "",
-        };
+        const settings = getSettings(model, modelSettings);
 
         const messages: { role: "system" | "user"; content: string }[] = [];
         if (settings.systemPrompt) {
@@ -101,10 +113,10 @@ export async function runRoundtable(
           messages,
           temperature: settings.temperature,
           maxTokens: settings.maxTokens,
-          onToken: (token) => callbacks.onRound1Token(model.providerId, token),
+          onToken: (token) => callbacks.onRound1Token(model.providerId, model.modelId, token),
           onComplete: (text, inputTokens, outputTokens) =>
-            callbacks.onRound1Complete(model.providerId, text, inputTokens, outputTokens),
-          onError: (error) => callbacks.onRound1Error(model.providerId, error),
+            callbacks.onRound1Complete(model.providerId, model.modelId, text, inputTokens, outputTokens),
+          onError: (error) => callbacks.onRound1Error(model.providerId, model.modelId, error),
         });
       })
     );
@@ -132,7 +144,7 @@ export async function runRoundtable(
 
       const synthPrompt = buildSynthesisPrompt(
         prompt,
-        round1Responses.map((r) => ({ name: r.model.providerName, text: r.text })),
+        round1Responses.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text })),
         [] // No Round 2
       );
 
@@ -141,10 +153,10 @@ export async function runRoundtable(
         messages: [{ role: "user", content: synthPrompt }],
         temperature: 0.5,
         maxTokens: 4096,
-        onToken: (token) => callbacks.onRound3Token(synthesizer.providerId, token),
+        onToken: (token) => callbacks.onRound3Token(synthesizer.providerId, synthesizer.modelId, token),
         onComplete: (text, inputTokens, outputTokens) =>
-          callbacks.onRound3Complete(synthesizer.providerId, text, inputTokens, outputTokens),
-        onError: (error) => callbacks.onRound3Error(synthesizer.providerId, error),
+          callbacks.onRound3Complete(synthesizer.providerId, synthesizer.modelId, text, inputTokens, outputTokens),
+        onError: (error) => callbacks.onRound3Error(synthesizer.providerId, synthesizer.modelId, error),
       });
 
       callbacks.onComplete();
@@ -160,24 +172,20 @@ export async function runRoundtable(
       respondingModels.map((model, i) => {
         const otherResponses = round1Responses
           .filter((_, j) => j !== i)
-          .map((r) => ({ name: r.model.providerName, text: r.text }));
+          .map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text }));
 
         const crossExamPrompt = buildCrossExamPrompt(prompt, otherResponses);
-        const settings = modelSettings[model.providerId] || {
-          temperature: 0.7,
-          maxTokens: 2048,
-          systemPrompt: "",
-        };
+        const settings = getSettings(model, modelSettings);
 
         return callLLM({
           model,
           messages: [{ role: "user", content: crossExamPrompt }],
           temperature: settings.temperature,
           maxTokens: settings.maxTokens,
-          onToken: (token) => callbacks.onRound2Token(model.providerId, token),
+          onToken: (token) => callbacks.onRound2Token(model.providerId, model.modelId, token),
           onComplete: (text, inputTokens, outputTokens) =>
-            callbacks.onRound2Complete(model.providerId, text, inputTokens, outputTokens),
-          onError: (error) => callbacks.onRound2Error(model.providerId, error),
+            callbacks.onRound2Complete(model.providerId, model.modelId, text, inputTokens, outputTokens),
+          onError: (error) => callbacks.onRound2Error(model.providerId, model.modelId, error),
         });
       })
     );
@@ -200,25 +208,21 @@ export async function runRoundtable(
         debateModels.map((model) => {
           const debatePrompt = buildDebatePrompt(
             prompt,
-            round1Responses.map((r) => ({ name: r.model.providerName, text: r.text })),
-            round2Responses.map((r) => ({ name: r.model.providerName, text: r.text }))
+            round1Responses.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text })),
+            round2Responses.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text }))
           );
 
-          const settings = modelSettings[model.providerId] || {
-            temperature: 0.7,
-            maxTokens: 2048,
-            systemPrompt: "",
-          };
+          const settings = getSettings(model, modelSettings);
 
           return callLLM({
             model,
             messages: [{ role: "user", content: debatePrompt }],
             temperature: settings.temperature,
             maxTokens: settings.maxTokens,
-            onToken: (token) => callbacks.onRound2_5Token(model.providerId, token),
+            onToken: (token) => callbacks.onRound2_5Token(model.providerId, model.modelId, token),
             onComplete: (text, inputTokens, outputTokens) =>
-              callbacks.onRound2_5Complete(model.providerId, text, inputTokens, outputTokens),
-            onError: (error) => callbacks.onRound2_5Error(model.providerId, error),
+              callbacks.onRound2_5Complete(model.providerId, model.modelId, text, inputTokens, outputTokens),
+            onError: (error) => callbacks.onRound2_5Error(model.providerId, model.modelId, error),
           });
         })
       );
@@ -241,9 +245,9 @@ export async function runRoundtable(
 
     const synthPrompt = buildSynthesisPrompt(
       prompt,
-      round1Responses.map((r) => ({ name: r.model.providerName, text: r.text })),
-      round2Responses.map((r) => ({ name: r.model.providerName, text: r.text })),
-      round2_5Responses?.map((r) => ({ name: r.model.providerName, text: r.text }))
+      round1Responses.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text })),
+      round2Responses.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text })),
+      round2_5Responses?.map((r) => ({ name: `${r.model.providerName} (${r.model.modelName})`, text: r.text }))
     );
 
     await callLLM({
@@ -251,10 +255,10 @@ export async function runRoundtable(
       messages: [{ role: "user", content: synthPrompt }],
       temperature: 0.5,
       maxTokens: 4096,
-      onToken: (token) => callbacks.onRound3Token(synthesizer.providerId, token),
+      onToken: (token) => callbacks.onRound3Token(synthesizer.providerId, synthesizer.modelId, token),
       onComplete: (text, inputTokens, outputTokens) =>
-        callbacks.onRound3Complete(synthesizer.providerId, text, inputTokens, outputTokens),
-      onError: (error) => callbacks.onRound3Error(synthesizer.providerId, error),
+        callbacks.onRound3Complete(synthesizer.providerId, synthesizer.modelId, text, inputTokens, outputTokens),
+      onError: (error) => callbacks.onRound3Error(synthesizer.providerId, synthesizer.modelId, error),
     });
 
     callbacks.onComplete();

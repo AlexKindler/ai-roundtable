@@ -1,4 +1,4 @@
-import { providers } from "./providers";
+import { getModelByKey } from "./providers/model-registry";
 
 export interface CostEstimate {
   providerId: string;
@@ -16,8 +16,7 @@ export function estimateCost(
   inputTokens: number,
   outputTokens: number
 ): CostEstimate {
-  const provider = providers.find((p) => p.id === providerId);
-  const model = provider?.models.find((m) => m.id === modelId);
+  const model = getModelByKey(providerId, modelId);
 
   const inputCostPer1M = model?.inputCostPer1M || 0;
   const outputCostPer1M = model?.outputCostPer1M || 0;

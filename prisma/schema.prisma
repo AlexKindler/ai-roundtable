@@ -65,8 +65,9 @@ model EncryptedApiKey {
   providerId   String
   encryptedKey String
   iv           String
-  selectedModel String?
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selectedModel  String?
+  selectedModels String?  // JSON array of model IDs
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

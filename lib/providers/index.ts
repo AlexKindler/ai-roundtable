@@ -1,9 +1,14 @@
+export type ModelCategory = "flagship" | "mid" | "budget" | "reasoning" | "speed";
+
 export interface ModelOption {
   id: string;
   name: string;
   capability: number; // 1-10, used to auto-select synthesizer
   inputCostPer1M: number; // USD per 1M input tokens
   outputCostPer1M: number; // USD per 1M output tokens
+  category: ModelCategory;
+  contextWindow: number; // e.g. 128000
+  tags?: string[]; // e.g. ["vision", "code", "reasoning"]
 }
 
 export interface ProviderConfig {

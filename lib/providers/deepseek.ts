@@ -6,8 +6,10 @@ export const deepseekProvider: ProviderConfig = {
   color: "#4D6BFE",
   apiKeyPlaceholder: "sk-...",
   models: [
-    { id: "deepseek-chat", name: "DeepSeek Chat", capability: 8, inputCostPer1M: 0.14, outputCostPer1M: 0.28 },
-    { id: "deepseek-reasoner", name: "DeepSeek Reasoner", capability: 9, inputCostPer1M: 0.55, outputCostPer1M: 2.19 },
+    { id: "deepseek-chat", name: "DeepSeek V3", capability: 8, inputCostPer1M: 0.14, outputCostPer1M: 0.28, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },
+    { id: "deepseek-v3-0324", name: "DeepSeek V3 (Mar 2025)", capability: 9, inputCostPer1M: 0.14, outputCostPer1M: 0.28, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },
+    { id: "deepseek-reasoner", name: "DeepSeek R1", capability: 9, inputCostPer1M: 0.55, outputCostPer1M: 2.19, category: "reasoning", contextWindow: 128000, tags: ["reasoning", "math", "code"] },
+    { id: "deepseek-r1-0528", name: "DeepSeek R1 (May 2025)", capability: 10, inputCostPer1M: 0.55, outputCostPer1M: 2.19, category: "reasoning", contextWindow: 128000, tags: ["reasoning", "math", "code"] },
   ],
   getBaseURL: () => "https://api.deepseek.com",
   validateKey: async (apiKey: string) => {

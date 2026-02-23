@@ -17,15 +17,24 @@ export function ModelResponseCard({ response }: ModelResponseCardProps) {
     : null;
 
   return (
-    <div className="rounded-lg border border-border p-4 space-y-2">
+    <div
+      className="relative rounded-lg border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-4 space-y-2 overflow-hidden"
+    >
+      {/* Gradient left accent */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg"
+        style={{ background: `linear-gradient(to bottom, ${response.color}, ${response.color}80)` }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
-            className="h-2.5 w-2.5 rounded-full"
+            className="h-2.5 w-2.5 rounded-full ring-2 ring-white/10"
             style={{ backgroundColor: response.color }}
           />
-          <span className="font-medium text-sm">{response.providerName}</span>
+          <span className="font-medium text-sm">{response.modelName}</span>
+          <span className="text-xs text-muted-foreground">{response.providerName}</span>
           {response.isStreaming && (
             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
           )}
@@ -53,7 +62,7 @@ export function ModelResponseCard({ response }: ModelResponseCardProps) {
           <span>{response.error}</span>
         </div>
       ) : (
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+        <div className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">
           {response.text}
           {response.isStreaming && (
             <span className="inline-block w-1.5 h-4 bg-foreground/70 animate-pulse ml-0.5 align-middle" />

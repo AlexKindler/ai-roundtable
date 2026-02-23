@@ -6,6 +6,7 @@ export interface ModelResponse {
   providerId: string;
   providerName: string;
   modelId: string;
+  modelName: string;
   color: string;
   text: string;
   isStreaming: boolean;
@@ -13,6 +14,11 @@ export interface ModelResponse {
   error?: string;
   inputTokens?: number;
   outputTokens?: number;
+}
+
+// Composite key for matching responses (supports multiple models per provider)
+export function responseKey(providerId: string, modelId: string): string {
+  return `${providerId}:${modelId}`;
 }
 
 export interface RoundtableResult {
@@ -34,16 +40,20 @@ interface RoundtableState {
 
   setStatus: (status: RoundtableStatus) => void;
   initResult: (id: string, prompt: string) => void;
-  updateRound1Response: (providerId: string, update: Partial<ModelResponse>) => void;
+  updateRound1Response: (providerId: string, modelId: string, update: Partial<ModelResponse>) => void;
   addRound1Response: (response: ModelResponse) => void;
-  updateRound2Response: (providerId: string, update: Partial<ModelResponse>) => void;
+  updateRound2Response: (providerId: string, modelId: string, update: Partial<ModelResponse>) => void;
   addRound2Response: (response: ModelResponse) => void;
-  updateRound2_5Response: (providerId: string, update: Partial<ModelResponse>) => void;
+  updateRound2_5Response: (providerId: string, modelId: string, update: Partial<ModelResponse>) => void;
   addRound2_5Response: (response: ModelResponse) => void;
   setFinalAnswer: (response: ModelResponse) => void;
   updateFinalAnswer: (update: Partial<ModelResponse>) => void;
   setError: (error: string) => void;
   reset: () => void;
+}
+
+function matchResponse(r: ModelResponse, providerId: string, modelId: string): boolean {
+  return r.providerId === providerId && r.modelId === modelId;
 }
 
 export const useRoundtableStore = create<RoundtableState>()((set) => ({
@@ -74,13 +84,13 @@ export const useRoundtableStore = create<RoundtableState>()((set) => ({
         : null,
     })),
 
-  updateRound1Response: (providerId, update) =>
+  updateRound1Response: (providerId, modelId, update) =>
     set((state) => ({
       currentResult: state.currentResult
         ? {
             ...state.currentResult,
             round1: state.currentResult.round1.map((r) =>
-              r.providerId === providerId ? { ...r, ...update } : r
+              matchResponse(r, providerId, modelId) ? { ...r, ...update } : r
             ),
           }
         : null,
@@ -93,13 +103,13 @@ export const useRoundtableStore = create<RoundtableState>()((set) => ({
         : null,
     })),
 
-  updateRound2Response: (providerId, update) =>
+  updateRound2Response: (providerId, modelId, update) =>
     set((state) => ({
       currentResult: state.currentResult
         ? {
             ...state.currentResult,
             round2: state.currentResult.round2.map((r) =>
-              r.providerId === providerId ? { ...r, ...update } : r
+              matchResponse(r, providerId, modelId) ? { ...r, ...update } : r
             ),
           }
         : null,
@@ -115,13 +125,13 @@ export const useRoundtableStore = create<RoundtableState>()((set) => ({
         : null,
     })),
 
-  updateRound2_5Response: (providerId, update) =>
+  updateRound2_5Response: (providerId, modelId, update) =>
     set((state) => ({
       currentResult: state.currentResult
         ? {
             ...state.currentResult,
             round2_5: (state.currentResult.round2_5 || []).map((r) =>
-              r.providerId === providerId ? { ...r, ...update } : r
+              matchResponse(r, providerId, modelId) ? { ...r, ...update } : r
             ),
           }
         : null,
