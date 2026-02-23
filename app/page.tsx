@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Settings, Key, X } from "lucide-react";
+import { UserMenu } from "@/components/auth/user-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChatView } from "@/components/chat/chat-view";
@@ -51,6 +52,7 @@ export default function Home() {
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
+          <UserMenu />
         </div>
       </header>
 

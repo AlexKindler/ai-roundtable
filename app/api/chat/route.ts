@@ -3,6 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createMistral } from "@ai-sdk/mistral";
+import { auth } from "@/lib/auth";
 
 const OPENAI_COMPATIBLE_PROVIDERS: Record<string, string> = {
   groq: "https://api.groq.com/openai/v1",
@@ -14,6 +15,11 @@ const OPENAI_COMPATIBLE_PROVIDERS: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const { provider, apiKey, model, messages, temperature = 0.7, maxTokens = 2048 } = await req.json();
 
   try {
