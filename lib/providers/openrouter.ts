@@ -6,6 +6,8 @@ export const openrouterProvider: ProviderConfig = {
   color: "#6366f1",
   apiKeyPlaceholder: "sk-or-...",
   apiKeyPrefix: "sk-or-",
+  setupUrl: "https://openrouter.ai/keys",
+  setupInstructions: "1. Sign in at openrouter.ai\n2. Go to Keys\n3. Click 'Create Key'\n4. Copy and paste below",
   models: [
     // OpenAI via Router
     { id: "openai/gpt-4o", name: "GPT-4o (via Router)", capability: 9, inputCostPer1M: 2.5, outputCostPer1M: 10, category: "flagship", contextWindow: 128000, tags: ["vision", "code"] },

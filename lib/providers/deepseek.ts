@@ -5,6 +5,8 @@ export const deepseekProvider: ProviderConfig = {
   name: "DeepSeek",
   color: "#4D6BFE",
   apiKeyPlaceholder: "sk-...",
+  setupUrl: "https://platform.deepseek.com/api_keys",
+  setupInstructions: "1. Sign in at platform.deepseek.com\n2. Go to API Keys\n3. Click 'Create new API key'\n4. Copy and paste below",
   models: [
     { id: "deepseek-chat", name: "DeepSeek V3", capability: 8, inputCostPer1M: 0.14, outputCostPer1M: 0.28, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },
     { id: "deepseek-v3-0324", name: "DeepSeek V3 (Mar 2025)", capability: 9, inputCostPer1M: 0.14, outputCostPer1M: 0.28, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },

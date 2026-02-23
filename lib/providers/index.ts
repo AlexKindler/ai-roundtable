@@ -18,6 +18,8 @@ export interface ProviderConfig {
   models: ModelOption[];
   apiKeyPlaceholder: string;
   apiKeyPrefix?: string;
+  setupUrl: string;
+  setupInstructions: string;
   validateKey: (apiKey: string) => Promise<boolean>;
   getBaseURL?: () => string;
 }

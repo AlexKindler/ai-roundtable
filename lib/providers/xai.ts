@@ -6,6 +6,8 @@ export const xaiProvider: ProviderConfig = {
   color: "#a0a0a0",
   apiKeyPlaceholder: "xai-...",
   apiKeyPrefix: "xai-",
+  setupUrl: "https://console.x.ai/",
+  setupInstructions: "1. Sign in at console.x.ai\n2. Go to API Keys section\n3. Click 'Create API Key'\n4. Copy and paste below",
   models: [
     { id: "grok-3", name: "Grok 3", capability: 10, inputCostPer1M: 3, outputCostPer1M: 15, category: "flagship", contextWindow: 131072, tags: ["reasoning", "code"] },
     { id: "grok-3-mini", name: "Grok 3 Mini", capability: 8, inputCostPer1M: 0.3, outputCostPer1M: 0.5, category: "reasoning", contextWindow: 131072, tags: ["reasoning", "speed"] },

@@ -6,6 +6,8 @@ export const groqProvider: ProviderConfig = {
   color: "#f55036",
   apiKeyPlaceholder: "gsk_...",
   apiKeyPrefix: "gsk_",
+  setupUrl: "https://console.groq.com/keys",
+  setupInstructions: "1. Sign in at console.groq.com\n2. Go to API Keys\n3. Click 'Create API Key'\n4. Copy and paste below",
   models: [
     { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", capability: 8, inputCostPer1M: 0.59, outputCostPer1M: 0.79, category: "flagship", contextWindow: 128000, tags: ["code"] },
     { id: "llama-3.1-70b-versatile", name: "Llama 3.1 70B", capability: 8, inputCostPer1M: 0.59, outputCostPer1M: 0.79, category: "flagship", contextWindow: 128000, tags: ["code"] },

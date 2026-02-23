@@ -5,6 +5,8 @@ export const mistralProvider: ProviderConfig = {
   name: "Mistral AI",
   color: "#ff7000",
   apiKeyPlaceholder: "Enter Mistral API key...",
+  setupUrl: "https://console.mistral.ai/api-keys",
+  setupInstructions: "1. Sign in at console.mistral.ai\n2. Go to API Keys\n3. Click 'Create new key'\n4. Copy and paste below",
   models: [
     { id: "mistral-large-latest", name: "Mistral Large", capability: 8, inputCostPer1M: 2, outputCostPer1M: 6, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },
     { id: "mistral-large-2411", name: "Mistral Large 2", capability: 9, inputCostPer1M: 2, outputCostPer1M: 6, category: "flagship", contextWindow: 128000, tags: ["code", "reasoning"] },

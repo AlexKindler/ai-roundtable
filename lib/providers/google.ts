@@ -6,6 +6,8 @@ export const googleProvider: ProviderConfig = {
   color: "#4285f4",
   apiKeyPlaceholder: "AI...",
   apiKeyPrefix: "AI",
+  setupUrl: "https://aistudio.google.com/apikey",
+  setupInstructions: "1. Sign in at aistudio.google.com\n2. Click 'Get API Key'\n3. Create a key in a new or existing project\n4. Copy and paste below",
   models: [
     { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", capability: 10, inputCostPer1M: 1.25, outputCostPer1M: 10, category: "flagship", contextWindow: 1048576, tags: ["reasoning", "code", "vision"] },
     { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", capability: 8, inputCostPer1M: 0.15, outputCostPer1M: 0.6, category: "speed", contextWindow: 1048576, tags: ["speed", "code", "vision"] },

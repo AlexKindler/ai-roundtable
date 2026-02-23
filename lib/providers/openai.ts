@@ -6,6 +6,8 @@ export const openaiProvider: ProviderConfig = {
   color: "#10a37f",
   apiKeyPlaceholder: "sk-...",
   apiKeyPrefix: "sk-",
+  setupUrl: "https://platform.openai.com/api-keys",
+  setupInstructions: "1. Sign in at platform.openai.com\n2. Go to API Keys\n3. Click 'Create new secret key'\n4. Copy and paste below",
   models: [
     { id: "gpt-4.1", name: "GPT-4.1", capability: 10, inputCostPer1M: 2, outputCostPer1M: 8, category: "flagship", contextWindow: 1047576, tags: ["code", "vision", "reasoning"] },
     { id: "gpt-4.1-mini", name: "GPT-4.1 Mini", capability: 8, inputCostPer1M: 0.4, outputCostPer1M: 1.6, category: "mid", contextWindow: 1047576, tags: ["code", "vision"] },

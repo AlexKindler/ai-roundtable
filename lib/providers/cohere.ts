@@ -5,6 +5,8 @@ export const cohereProvider: ProviderConfig = {
   name: "Cohere",
   color: "#d18ee2",
   apiKeyPlaceholder: "Enter Cohere API key...",
+  setupUrl: "https://dashboard.cohere.com/api-keys",
+  setupInstructions: "1. Sign in at dashboard.cohere.com\n2. Go to API Keys\n3. Click 'Create Trial Key' or use production key\n4. Copy and paste below",
   models: [
     { id: "command-a-03-2025", name: "Command A", capability: 9, inputCostPer1M: 2.5, outputCostPer1M: 10, category: "flagship", contextWindow: 256000, tags: ["code", "reasoning"] },
     { id: "command-r-plus", name: "Command R+", capability: 8, inputCostPer1M: 2.5, outputCostPer1M: 10, category: "flagship", contextWindow: 128000, tags: ["code"] },

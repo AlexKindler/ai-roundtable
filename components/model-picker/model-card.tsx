@@ -1,13 +1,12 @@
 "use client";
 
-import { Check, Lock } from "lucide-react";
+import { Check } from "lucide-react";
 import type { RegisteredModel } from "@/lib/providers/model-registry";
 import { cn } from "@/lib/utils";
 
 interface ModelCardProps {
   model: RegisteredModel;
   isSelected: boolean;
-  isAuthenticated: boolean;
   onToggle: () => void;
 }
 
@@ -25,7 +24,7 @@ function formatContext(tokens: number): string {
   return String(tokens);
 }
 
-export function ModelCard({ model, isSelected, isAuthenticated, onToggle }: ModelCardProps) {
+export function ModelCard({ model, isSelected, onToggle }: ModelCardProps) {
   return (
     <button
       onClick={onToggle}
@@ -36,11 +35,9 @@ export function ModelCard({ model, isSelected, isAuthenticated, onToggle }: Mode
           : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1]"
       )}
     >
-      {/* Checkbox / lock */}
+      {/* Checkbox */}
       <div className="shrink-0 w-5 h-5 rounded flex items-center justify-center">
-        {!isAuthenticated ? (
-          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-        ) : isSelected ? (
+        {isSelected ? (
           <div className="w-4 h-4 rounded bg-indigo-500 flex items-center justify-center">
             <Check className="h-3 w-3 text-white" />
           </div>
@@ -49,16 +46,9 @@ export function ModelCard({ model, isSelected, isAuthenticated, onToggle }: Mode
         )}
       </div>
 
-      {/* Provider dot + model info */}
+      {/* Model info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <div
-            className="h-2 w-2 rounded-full shrink-0"
-            style={{ backgroundColor: model.providerColor }}
-          />
-          <span className="text-[11px] text-muted-foreground">{model.providerName}</span>
-        </div>
-        <div className="text-sm font-medium truncate mt-0.5">{model.modelName}</div>
+        <div className="text-sm font-medium truncate">{model.modelName}</div>
       </div>
 
       {/* Right side: metadata */}
