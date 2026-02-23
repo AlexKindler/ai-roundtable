@@ -213,9 +213,30 @@ export function ApiKeyDialog({ providerId, open, onOpenChange, onDone }: ApiKeyD
           {/* Step 3: Choose Models */}
           {step === "choose-models" && (
             <div className="space-y-3">
-              <Dialog.Description className="text-sm text-muted-foreground">
-                Select the models you want to include in your roundtable.
-              </Dialog.Description>
+              <div className="flex items-center justify-between">
+                <Dialog.Description className="text-sm text-muted-foreground">
+                  Select the models you want to include in your roundtable.
+                </Dialog.Description>
+                <button
+                  onClick={() => {
+                    const allSelected = providerModels.every((m) => isModelSelected(m.providerId, m.modelId));
+                    for (const m of providerModels) {
+                      if (allSelected) {
+                        removeSelectedModel(m.providerId, m.modelId);
+                      } else {
+                        if (!isModelSelected(m.providerId, m.modelId)) {
+                          addSelectedModel(m.providerId, m.modelId);
+                        }
+                      }
+                    }
+                  }}
+                  className="shrink-0 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                >
+                  {providerModels.every((m) => isModelSelected(m.providerId, m.modelId))
+                    ? "Deselect all"
+                    : "Select all"}
+                </button>
+              </div>
 
               <div className="space-y-1 max-h-[50vh] overflow-y-auto pr-1">
                 {providerModels.map((model) => (
