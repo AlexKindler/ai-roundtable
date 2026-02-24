@@ -6,12 +6,11 @@ import { RoundtableResult } from "./roundtable-result";
 import { RoundSection } from "./round-section";
 import { FinalAnswer } from "./final-answer";
 import { ProgressIndicator } from "@/components/progress-indicator";
-import { useRoundtableStore, responseKey } from "@/lib/stores/roundtable-store";
+import { useRoundtableStore } from "@/lib/stores/roundtable-store";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { useApiKeysStore } from "@/lib/stores/api-keys-store";
 import { useSettingsStore } from "@/lib/stores/settings-store";
 import { providers, type ActiveModel } from "@/lib/providers";
-import { getModelByKey } from "@/lib/providers/model-registry";
 import { runRoundtable } from "@/lib/engine/deliberation";
 import type { StreamCallbacks } from "@/lib/engine/types";
 import { MessageSquare } from "lucide-react";
@@ -25,9 +24,18 @@ export function ChatView() {
 
   const isRunning = roundtable.status !== "idle" && roundtable.status !== "complete" && roundtable.status !== "error";
 
-  // Auto-scroll on new content
-  useEffect(() => {
+  // Auto-scroll: only when user is near the bottom (don't fight manual scrolling)
+  const isNearBottom = useRef(true);
+
+  const handleScroll = useCallback(() => {
     if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      isNearBottom.current = scrollHeight - scrollTop - clientHeight < 100;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isNearBottom.current && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, roundtable.currentResult, roundtable.status]);
@@ -80,15 +88,20 @@ export function ChatView() {
       });
     }
 
+    // Helper: always read fresh store state (avoids stale closure bugs)
+    const getStore = () => useRoundtableStore.getState();
+
     const callbacks: StreamCallbacks = {
-      onRound1Start: () => roundtable.setStatus("round1"),
+      onRound1Start: () => getStore().setStatus("round1"),
       onRound1Token: (providerId, modelId, token) => {
-        roundtable.updateRound1Response(providerId, modelId, {
-          text: (roundtable.currentResult?.round1.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
+        const store = getStore();
+        const current = store.currentResult?.round1.find((r) => r.providerId === providerId && r.modelId === modelId);
+        store.updateRound1Response(providerId, modelId, {
+          text: (current?.text || "") + token,
         });
       },
       onRound1Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound1Response(providerId, modelId, {
+        getStore().updateRound1Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -97,7 +110,7 @@ export function ChatView() {
         });
       },
       onRound1Error: (providerId, modelId, error) => {
-        roundtable.updateRound1Response(providerId, modelId, {
+        getStore().updateRound1Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -105,10 +118,11 @@ export function ChatView() {
       },
 
       onRound2Start: () => {
-        roundtable.setStatus("round2");
-        const r1Responses = roundtable.currentResult?.round1.filter((r) => r.isComplete && !r.error) || [];
+        const store = getStore();
+        store.setStatus("round2");
+        const r1Responses = store.currentResult?.round1.filter((r) => r.isComplete && !r.error) || [];
         for (const r of r1Responses) {
-          roundtable.addRound2Response({
+          store.addRound2Response({
             providerId: r.providerId,
             providerName: r.providerName,
             modelId: r.modelId,
@@ -121,12 +135,14 @@ export function ChatView() {
         }
       },
       onRound2Token: (providerId, modelId, token) => {
-        roundtable.updateRound2Response(providerId, modelId, {
-          text: (roundtable.currentResult?.round2.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
+        const store = getStore();
+        const current = store.currentResult?.round2.find((r) => r.providerId === providerId && r.modelId === modelId);
+        store.updateRound2Response(providerId, modelId, {
+          text: (current?.text || "") + token,
         });
       },
       onRound2Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound2Response(providerId, modelId, {
+        getStore().updateRound2Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -135,7 +151,7 @@ export function ChatView() {
         });
       },
       onRound2Error: (providerId, modelId, error) => {
-        roundtable.updateRound2Response(providerId, modelId, {
+        getStore().updateRound2Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -143,10 +159,11 @@ export function ChatView() {
       },
 
       onRound2_5Start: () => {
-        roundtable.setStatus("round2.5");
-        const r2Responses = roundtable.currentResult?.round2.filter((r) => r.isComplete && !r.error) || [];
+        const store = getStore();
+        store.setStatus("round2.5");
+        const r2Responses = store.currentResult?.round2.filter((r) => r.isComplete && !r.error) || [];
         for (const r of r2Responses) {
-          roundtable.addRound2_5Response({
+          store.addRound2_5Response({
             providerId: r.providerId,
             providerName: r.providerName,
             modelId: r.modelId,
@@ -159,12 +176,14 @@ export function ChatView() {
         }
       },
       onRound2_5Token: (providerId, modelId, token) => {
-        roundtable.updateRound2_5Response(providerId, modelId, {
-          text: (roundtable.currentResult?.round2_5?.find((r) => r.providerId === providerId && r.modelId === modelId)?.text || "") + token,
+        const store = getStore();
+        const current = store.currentResult?.round2_5?.find((r) => r.providerId === providerId && r.modelId === modelId);
+        store.updateRound2_5Response(providerId, modelId, {
+          text: (current?.text || "") + token,
         });
       },
       onRound2_5Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
-        roundtable.updateRound2_5Response(providerId, modelId, {
+        getStore().updateRound2_5Response(providerId, modelId, {
           text,
           isStreaming: false,
           isComplete: true,
@@ -173,7 +192,7 @@ export function ChatView() {
         });
       },
       onRound2_5Error: (providerId, modelId, error) => {
-        roundtable.updateRound2_5Response(providerId, modelId, {
+        getStore().updateRound2_5Response(providerId, modelId, {
           isStreaming: false,
           isComplete: true,
           error,
@@ -181,13 +200,14 @@ export function ChatView() {
       },
 
       onRound3Start: () => {
-        roundtable.setStatus("round3");
+        getStore().setStatus("round3");
       },
       onRound3Token: (providerId, modelId, token) => {
-        const current = roundtable.currentResult?.finalAnswer;
+        const store = getStore();
+        const current = store.currentResult?.finalAnswer;
         if (!current) {
           const model = activeModels.find((m) => m.providerId === providerId && m.modelId === modelId);
-          roundtable.setFinalAnswer({
+          store.setFinalAnswer({
             providerId,
             providerName: model?.providerName || providerId,
             modelId,
@@ -198,13 +218,14 @@ export function ChatView() {
             isComplete: false,
           });
         } else {
-          roundtable.updateFinalAnswer({ text: current.text + token });
+          store.updateFinalAnswer({ text: current.text + token });
         }
       },
       onRound3Complete: (providerId, modelId, text, inputTokens, outputTokens) => {
+        const store = getStore();
         const model = activeModels.find((m) => m.providerId === providerId && m.modelId === modelId);
-        if (!roundtable.currentResult?.finalAnswer) {
-          roundtable.setFinalAnswer({
+        if (!store.currentResult?.finalAnswer) {
+          store.setFinalAnswer({
             providerId,
             providerName: model?.providerName || providerId,
             modelId,
@@ -217,7 +238,7 @@ export function ChatView() {
             outputTokens,
           });
         } else {
-          roundtable.updateFinalAnswer({
+          store.updateFinalAnswer({
             text,
             isStreaming: false,
             isComplete: true,
@@ -227,7 +248,7 @@ export function ChatView() {
         }
       },
       onRound3Error: (_providerId, _modelId, error) => {
-        roundtable.updateFinalAnswer({
+        getStore().updateFinalAnswer({
           isStreaming: false,
           isComplete: true,
           error,
@@ -235,13 +256,14 @@ export function ChatView() {
       },
 
       onComplete: () => {
-        roundtable.setStatus("complete");
-        if (roundtable.currentResult) {
-          addRoundtableResult(roundtable.currentResult);
+        const store = getStore();
+        store.setStatus("complete");
+        if (store.currentResult) {
+          addRoundtableResult(store.currentResult);
         }
       },
       onError: (error) => {
-        roundtable.setError(error);
+        getStore().setError(error);
       },
     };
 
@@ -273,7 +295,7 @@ export function ChatView() {
   return (
     <div className="flex flex-col h-full">
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {messages.length === 0 && !roundtable.currentResult && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-4 text-muted-foreground">
             <MessageSquare className="h-12 w-12 opacity-30" />
