@@ -65,7 +65,7 @@ export function buildSynthesisPrompt(
     debateSection = `\n\nDebate round responses:\n${r2_5Text}`;
   }
 
-  return `You are the final synthesizer in an AI roundtable. Your job is to produce the single best possible answer.
+  return `You are the final synthesizer in an AI roundtable. Multiple AI models have independently answered the same question, then cross-examined each other. Your job is to merge ALL of their perspectives into one cohesive, unified answer — not to pick a winner.
 
 Original question: "${originalPrompt}"
 
@@ -75,9 +75,12 @@ ${r1Text}
 Round 2 cross-examination responses:
 ${r2Text}${debateSection}
 
-Please produce a final, comprehensive, well-structured answer that:
-- Incorporates the strongest points from all participants
-- Resolves any contradictions with the most well-supported position
-- Flags remaining uncertainties honestly
-- Is clear, actionable, and directly answers the user's question`;
+Produce a single, well-structured answer that:
+- Weaves together insights and perspectives from EVERY participant — do not ignore or discard any model's contribution
+- Where models agree, present the shared conclusion confidently
+- Where models disagree, present the different viewpoints fairly and explain the trade-offs rather than just picking one
+- Integrates unique points that only one model raised — these are often the most valuable additions
+- Flags genuine uncertainties honestly
+- Reads as one coherent, complete answer (not a list of "Model A said X, Model B said Y")
+- Is clear, thorough, and directly answers the user's question`;
 }
