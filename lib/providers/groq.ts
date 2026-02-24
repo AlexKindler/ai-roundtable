@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const groqProvider: ProviderConfig = {
   id: "groq",
@@ -18,27 +19,5 @@ export const groqProvider: ProviderConfig = {
     { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", capability: 7, inputCostPer1M: 0.24, outputCostPer1M: 0.24, category: "mid", contextWindow: 32768, tags: ["code"] },
   ],
   getBaseURL: () => "https://api.groq.com/openai/v1",
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "groq",
-          apiKey,
-          body: {
-            model: "llama-3.1-8b-instant",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("groq", apiKey, "llama-3.1-8b-instant"),
 };

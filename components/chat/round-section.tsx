@@ -6,12 +6,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ModelResponseCard } from "./model-response";
 import { responseKey, type ModelResponse } from "@/lib/stores/roundtable-store";
 
+interface RoundGroup {
+  title: string;
+  responses: ModelResponse[];
+  completedCount?: number;
+  totalCount?: number;
+}
+
 interface RoundSectionProps {
   title: string;
   responses: ModelResponse[];
   defaultOpen?: boolean;
   completedCount?: number;
   totalCount?: number;
+  /** When provided, renders multiple sub-rounds inside this collapsible */
+  roundGroups?: RoundGroup[];
 }
 
 export function RoundSection({
@@ -20,10 +29,16 @@ export function RoundSection({
   defaultOpen = false,
   completedCount,
   totalCount,
+  roundGroups,
 }: RoundSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const showProgress = completedCount !== undefined && totalCount !== undefined && completedCount < totalCount;
+
+  // Count total responses across all groups for the badge
+  const totalResponses = roundGroups
+    ? roundGroups.reduce((sum, g) => sum + g.responses.length, 0)
+    : responses.length;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -39,18 +54,38 @@ export function RoundSection({
             {completedCount}/{totalCount} complete
           </span>
         )}
-        {!showProgress && responses.length > 0 && (
+        {!showProgress && totalResponses > 0 && (
           <span className="text-xs text-muted-foreground ml-auto">
-            {responses.length} response{responses.length !== 1 ? "s" : ""}
+            {totalResponses} response{totalResponses !== 1 ? "s" : ""}
           </span>
         )}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="space-y-2 pl-6 pt-2 pb-1">
-          {responses.map((response) => (
-            <ModelResponseCard key={responseKey(response.providerId, response.modelId)} response={response} />
-          ))}
-        </div>
+        {roundGroups ? (
+          <div className="space-y-4 pl-4 pt-2 pb-1">
+            {roundGroups.map((group) => (
+              <div key={group.title} className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium px-2">
+                  <span>{group.title}</span>
+                  {group.completedCount !== undefined && group.totalCount !== undefined && group.completedCount < group.totalCount && (
+                    <span className="ml-auto">{group.completedCount}/{group.totalCount} complete</span>
+                  )}
+                </div>
+                <div className="space-y-2 pl-2">
+                  {group.responses.map((response) => (
+                    <ModelResponseCard key={responseKey(response.providerId, response.modelId)} response={response} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2 pl-6 pt-2 pb-1">
+            {responses.map((response) => (
+              <ModelResponseCard key={responseKey(response.providerId, response.modelId)} response={response} />
+            ))}
+          </div>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );

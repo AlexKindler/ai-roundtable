@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const xaiProvider: ProviderConfig = {
   id: "xai",
@@ -16,27 +17,5 @@ export const xaiProvider: ProviderConfig = {
     { id: "grok-2-mini", name: "Grok 2 Mini", capability: 6, inputCostPer1M: 0.3, outputCostPer1M: 0.5, category: "budget", contextWindow: 131072, tags: ["speed"] },
   ],
   getBaseURL: () => "https://api.x.ai/v1",
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "xai",
-          apiKey,
-          body: {
-            model: "grok-2-mini",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("xai", apiKey, "grok-3-mini"),
 };

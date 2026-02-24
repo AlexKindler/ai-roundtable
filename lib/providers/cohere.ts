@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const cohereProvider: ProviderConfig = {
   id: "cohere",
@@ -15,27 +16,5 @@ export const cohereProvider: ProviderConfig = {
     { id: "command-light", name: "Command Light", capability: 5, inputCostPer1M: 0.3, outputCostPer1M: 0.6, category: "budget", contextWindow: 4096, tags: ["speed"] },
   ],
   getBaseURL: () => "https://api.cohere.com/compatibility/v1",
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "cohere",
-          apiKey,
-          body: {
-            model: "command-r",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("cohere", apiKey, "command-r"),
 };

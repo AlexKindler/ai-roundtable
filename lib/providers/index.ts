@@ -62,3 +62,46 @@ export const providers: ProviderConfig[] = [
 export function getProvider(id: string): ProviderConfig | undefined {
   return providers.find((p) => p.id === id);
 }
+
+/** Shared validation helper used by all providers */
+export async function validateProviderKey(
+  provider: string,
+  apiKey: string,
+  model: string
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider,
+        apiKey,
+        body: {
+          model,
+          messages: [{ role: "user", content: "Hi" }],
+          max_tokens: 16,
+        },
+      }),
+    });
+
+    if (res.ok) return { valid: true };
+
+    const data = await res.json().catch(() => null);
+
+    // 401 = upstream auth failure → key is definitely bad
+    if (res.status === 401) {
+      return { valid: false, error: "Invalid API key. Please check and try again." };
+    }
+
+    // 403 = session expired, not an API key problem
+    if (res.status === 403) {
+      return { valid: false, error: data?.error || "Session expired. Please refresh the page and sign in." };
+    }
+
+    // 502 / other = upstream issue (model not found, rate limit, etc.)
+    // The key itself is likely fine — accept it and let the user proceed
+    return { valid: true, error: data?.error };
+  } catch {
+    return { valid: false, error: "Network error. Please check your connection." };
+  }
+}

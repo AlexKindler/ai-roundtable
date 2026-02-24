@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const openaiProvider: ProviderConfig = {
   id: "openai",
@@ -21,27 +22,5 @@ export const openaiProvider: ProviderConfig = {
     { id: "o1", name: "o1", capability: 10, inputCostPer1M: 15, outputCostPer1M: 60, category: "reasoning", contextWindow: 200000, tags: ["reasoning", "math"] },
     { id: "o1-mini", name: "o1 Mini", capability: 8, inputCostPer1M: 3, outputCostPer1M: 12, category: "reasoning", contextWindow: 128000, tags: ["reasoning"] },
   ],
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "openai",
-          apiKey,
-          body: {
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("openai", apiKey, "gpt-4.1-nano"),
 };

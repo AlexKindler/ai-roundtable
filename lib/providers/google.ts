@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const googleProvider: ProviderConfig = {
   id: "google",
@@ -17,27 +18,5 @@ export const googleProvider: ProviderConfig = {
     { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", capability: 7, inputCostPer1M: 0.075, outputCostPer1M: 0.3, category: "speed", contextWindow: 1048576, tags: ["speed", "vision"] },
     { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash 8B", capability: 5, inputCostPer1M: 0.0375, outputCostPer1M: 0.15, category: "budget", contextWindow: 1048576, tags: ["speed"] },
   ],
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "google",
-          apiKey,
-          body: {
-            model: "gemini-2.0-flash",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("google", apiKey, "gemini-2.0-flash"),
 };

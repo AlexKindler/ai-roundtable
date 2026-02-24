@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const mistralProvider: ProviderConfig = {
   id: "mistral",
@@ -17,27 +18,5 @@ export const mistralProvider: ProviderConfig = {
     { id: "open-mistral-nemo", name: "Mistral Nemo", capability: 6, inputCostPer1M: 0.15, outputCostPer1M: 0.15, category: "budget", contextWindow: 128000, tags: ["speed"] },
     { id: "open-mixtral-8x22b", name: "Mixtral 8x22B", capability: 7, inputCostPer1M: 2, outputCostPer1M: 6, category: "mid", contextWindow: 65000, tags: ["code"] },
   ],
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "mistral",
-          apiKey,
-          body: {
-            model: "mistral-small-latest",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("mistral", apiKey, "mistral-small-latest"),
 };

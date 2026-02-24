@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const anthropicProvider: ProviderConfig = {
   id: "anthropic",
@@ -16,27 +17,5 @@ export const anthropicProvider: ProviderConfig = {
     { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", capability: 7, inputCostPer1M: 0.8, outputCostPer1M: 4, category: "speed", contextWindow: 200000, tags: ["speed", "code"] },
     { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku", capability: 6, inputCostPer1M: 0.25, outputCostPer1M: 1.25, category: "budget", contextWindow: 200000, tags: ["speed"] },
   ],
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "anthropic",
-          apiKey,
-          body: {
-            model: "claude-sonnet-4-20250514",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("anthropic", apiKey, "claude-sonnet-4-20250514"),
 };

@@ -14,10 +14,46 @@ const OPENAI_COMPATIBLE_PROVIDERS: Record<string, string> = {
   openrouter: "https://openrouter.ai/api/v1",
 };
 
+// Extract HTTP status from various AI SDK error shapes
+function getUpstreamStatus(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const e = error as Record<string, unknown>;
+  // AI SDK APICallError uses statusCode; some use status; data.error may contain status
+  for (const key of ["statusCode", "status"]) {
+    if (typeof e[key] === "number") return e[key] as number;
+  }
+  // Some errors nest inside a data or cause property
+  if (typeof e.cause === "object" && e.cause !== null) {
+    return getUpstreamStatus(e.cause);
+  }
+  return undefined;
+}
+
+// Check if error message suggests an auth failure
+function looksLikeAuthError(message: string): boolean {
+  const patterns = [
+    "invalid.*api.?key",
+    "invalid.*key",
+    "incorrect.*api.?key",
+    "authentication",
+    "unauthorized",
+    "forbidden",
+    "permission denied",
+    "invalid x-api-key",
+    "invalid_api_key",
+  ];
+  const lower = message.toLowerCase();
+  return patterns.some((p) => new RegExp(p).test(lower));
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
-    return new Response("Unauthorized", { status: 401 });
+    // Use 403 so it's distinguishable from a 401 "invalid API key" from upstream
+    return Response.json(
+      { error: "Please sign in to validate API keys.", code: "session_required" },
+      { status: 403 }
+    );
   }
 
   const { provider, apiKey, body } = await req.json();
@@ -44,7 +80,7 @@ export async function POST(req: Request) {
       });
       languageModel = openaiCompat(body.model);
     } else {
-      return new Response(`Unknown provider: ${provider}`, { status: 400 });
+      return Response.json({ error: `Unknown provider: ${provider}` }, { status: 400 });
     }
 
     await generateText({
@@ -53,21 +89,17 @@ export async function POST(req: Request) {
       maxOutputTokens: Math.max(body.max_tokens ?? 16, 16),
     });
 
-    return new Response("OK", { status: 200 });
+    return Response.json({ ok: true }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    const statusCode = getUpstreamStatus(error);
 
-    // Extract upstream status code from AI SDK errors
-    const statusCode =
-      (error as { status?: number })?.status ??
-      (error as { statusCode?: number })?.statusCode;
-
-    // Auth failures from upstream providers
-    if (statusCode === 401 || statusCode === 403) {
+    // Definite auth failure from upstream provider
+    if (statusCode === 401 || statusCode === 403 || looksLikeAuthError(message)) {
       return Response.json({ error: message, code: "invalid_key" }, { status: 401 });
     }
 
-    // Everything else is an upstream/transient error, not an invalid key
+    // Everything else: model not found, rate limit, server error, etc.
     return Response.json({ error: message, code: "upstream_error" }, { status: 502 });
   }
 }

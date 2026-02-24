@@ -314,40 +314,23 @@ export function ChatView() {
               round2Total={round2Total}
             />
 
-            {/* Live Round 1 */}
-            {roundtable.currentResult.round1.length > 0 && (
-              <RoundSection
-                title="Round 1: Independent Answers"
-                responses={roundtable.currentResult.round1}
-                defaultOpen={true}
-                completedCount={round1Complete}
-                totalCount={round1Total}
-              />
-            )}
-
-            {/* Live Round 2 */}
-            {roundtable.currentResult.round2.length > 0 && (
-              <RoundSection
-                title="Round 2: Cross-Examination"
-                responses={roundtable.currentResult.round2}
-                defaultOpen={true}
-                completedCount={round2Complete}
-                totalCount={round2Total}
-              />
-            )}
-
-            {/* Live Round 2.5 */}
-            {roundtable.currentResult.round2_5 && roundtable.currentResult.round2_5.length > 0 && (
-              <RoundSection
-                title="Debate Round"
-                responses={roundtable.currentResult.round2_5}
-                defaultOpen={true}
-              />
-            )}
-
-            {/* Live Final Answer */}
+            {/* Live Final Answer — shown first and prominently */}
             {roundtable.currentResult.finalAnswer && (
               <FinalAnswer response={roundtable.currentResult.finalAnswer} />
+            )}
+
+            {/* All rounds collapsed into "View Details" */}
+            {roundtable.currentResult.round1.length > 0 && (
+              <RoundSection
+                title="View Details — Individual Model Responses"
+                responses={[]}
+                defaultOpen={false}
+                roundGroups={[
+                  ...(roundtable.currentResult.round1.length > 0 ? [{ title: "Round 1: Independent Answers", responses: roundtable.currentResult.round1, completedCount: round1Complete, totalCount: round1Total }] : []),
+                  ...(roundtable.currentResult.round2.length > 0 ? [{ title: "Round 2: Cross-Examination", responses: roundtable.currentResult.round2, completedCount: round2Complete, totalCount: round2Total }] : []),
+                  ...(roundtable.currentResult.round2_5 && roundtable.currentResult.round2_5.length > 0 ? [{ title: "Debate Round", responses: roundtable.currentResult.round2_5 }] : []),
+                ]}
+              />
             )}
           </div>
         )}

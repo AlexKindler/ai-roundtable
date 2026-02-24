@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const perplexityProvider: ProviderConfig = {
   id: "perplexity",
@@ -15,27 +16,5 @@ export const perplexityProvider: ProviderConfig = {
     { id: "sonar", name: "Sonar", capability: 7, inputCostPer1M: 1, outputCostPer1M: 1, category: "mid", contextWindow: 128000, tags: ["search"] },
   ],
   getBaseURL: () => "https://api.perplexity.ai",
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "perplexity",
-          apiKey,
-          body: {
-            model: "sonar",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("perplexity", apiKey, "sonar"),
 };

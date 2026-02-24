@@ -11,8 +11,7 @@ interface RoundtableResultProps {
 }
 
 export function RoundtableResult({ result }: RoundtableResultProps) {
-  const { defaultView, showCostEstimates } = useSettingsStore();
-  const showRoundsDefault = defaultView === "all-rounds";
+  const { showCostEstimates } = useSettingsStore();
 
   // Calculate total cost
   const allResponses = [
@@ -30,33 +29,25 @@ export function RoundtableResult({ result }: RoundtableResultProps) {
     return sum;
   }, 0);
 
+  // Build round groups for the details section
+  const roundGroups = [
+    ...(result.round1.length > 0 ? [{ title: "Round 1: Independent Answers", responses: result.round1 }] : []),
+    ...(result.round2.length > 0 ? [{ title: "Round 2: Cross-Examination", responses: result.round2 }] : []),
+    ...(result.round2_5 && result.round2_5.length > 0 ? [{ title: "Debate Round", responses: result.round2_5 }] : []),
+  ];
+
   return (
     <div className="space-y-3">
       {/* Final answer first (most prominent) */}
       {result.finalAnswer && <FinalAnswer response={result.finalAnswer} />}
 
-      {/* Collapsible rounds */}
-      {result.round1.length > 0 && (
+      {/* All rounds collapsed into a single "View Details" section */}
+      {roundGroups.length > 0 && (
         <RoundSection
-          title="Round 1: Independent Answers"
-          responses={result.round1}
-          defaultOpen={showRoundsDefault}
-        />
-      )}
-
-      {result.round2.length > 0 && (
-        <RoundSection
-          title="Round 2: Cross-Examination"
-          responses={result.round2}
-          defaultOpen={showRoundsDefault}
-        />
-      )}
-
-      {result.round2_5 && result.round2_5.length > 0 && (
-        <RoundSection
-          title="Debate Round"
-          responses={result.round2_5}
-          defaultOpen={showRoundsDefault}
+          title="View Details — Individual Model Responses"
+          responses={[]}
+          defaultOpen={false}
+          roundGroups={roundGroups}
         />
       )}
 

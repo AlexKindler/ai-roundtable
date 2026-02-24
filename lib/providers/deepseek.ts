@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "./index";
+import { validateProviderKey } from "./index";
 
 export const deepseekProvider: ProviderConfig = {
   id: "deepseek",
@@ -14,27 +15,5 @@ export const deepseekProvider: ProviderConfig = {
     { id: "deepseek-r1-0528", name: "DeepSeek R1 (May 2025)", capability: 10, inputCostPer1M: 0.55, outputCostPer1M: 2.19, category: "reasoning", contextWindow: 128000, tags: ["reasoning", "math", "code"] },
   ],
   getBaseURL: () => "https://api.deepseek.com",
-  validateKey: async (apiKey: string) => {
-    try {
-      const res = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: "deepseek",
-          apiKey,
-          body: {
-            model: "deepseek-chat",
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 5,
-          },
-        }),
-      });
-      if (res.ok) return { valid: true };
-      if (res.status === 401) return { valid: false, error: "Invalid API key. Please check and try again." };
-      const data = await res.json().catch(() => null);
-      return { valid: false, error: data?.error || `Validation failed (${res.status})` };
-    } catch {
-      return { valid: false, error: "Network error. Please check your connection." };
-    }
-  },
+  validateKey: (apiKey) => validateProviderKey("deepseek", apiKey, "deepseek-chat"),
 };
